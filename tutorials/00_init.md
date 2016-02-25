@@ -44,7 +44,7 @@ In order for babel to know what presets/plugins to use, we must create an
 additional file called `.babelrc`, which will act as our babel config. Put in
 the following contents:
 
-```
+```json
 {
   "presets": ["es2015"]
 }
@@ -61,7 +61,7 @@ bootstrapping code.
 ```js
 'use strict';
 
-require('babel/register'); // This starts up the babel runtime parser
+require('babel-core/register'); // This starts up the babel runtime parser
 require('babel-polyfill'); // This provides the extra es6 items like Promises and Array methods
 require('./app'); // Starts up the app be requiring our `index.js.
 
@@ -120,6 +120,23 @@ Create the following folders in your app:
   the directory you want to commit called `.gitkeep` (you can call it whatever
   you want, but that is a standard of naming that says, "I want to keep this
   folder in source control even though I don't have any content in it").
+
+It's a good idea to also setup `npm start` to start up the correct file. In your
+`package.json`, add a script called `start` that runs `node init`.
+
+```js
+{
+  // ...
+  "scripts": {
+    "start": "node init"
+  },
+  // ...
+}
+```
+
+Now when you run `npm start`, it will run `node init`, which will start up your
+app. At this point, you should attempt to run `npm start` and make sure you get
+the "Server listening" message in your console.
 
 Now that you've got kind of a boilerplate set up, go ahead and commit your work
 and push it up to github.
