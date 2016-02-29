@@ -171,34 +171,52 @@ with the `completed` field set to false.
 This is a pretty rudimentary todo api which only allows you to retrieve and
 create new todos. Below is a simple Todo class to store todos in memory. Note
 that this will just be used for testing purposes and should not be used in
-production. Every time the server restarts, it will clear your todo data.
+production. Every time the server restarts, it will clear your todo data. It
+provides you with basic `CRUD` functionality. `CRUD` stands for `Create`,
+`Read`, `Update`, `Delete`.
 
 ```js
 'use strict';
 
+// These are the valid keys for creating a new todo
+const VALID_KEYS = new Set([ 'name', 'completed' ]);
+// This will be where the todos are stored
 const todos = [];
+// This will be our quick todo lookup
 const idIndex = {};
+// This is the id that gets incremented every time we create a new todo
 let autoId = 1;
 
 class Todo {
 
+  // creates a new todo
   constructor(newTodo) {
+    // Reduces the passed in todo object to just the valid properties so that we
+    // don't override any prototype methods.
+    newTodo = Object.keys(newTodo).reduce((todo, key) => {
+      if (VALID_KEYS.has(key)) todo[key] = newTodo[key];
+      return todo;
+    }, {});
+
     Object.assign(this, {
       completed: false,
       name: '',
-    }, {
-      completed: newTodo.completed,
-      name: newTodo.name,
-    });
+    }, newTodo);
   }
 
+  // Saves the newly created todo in the "database"
   save(callback) {
     Todo.validate(this, (err, data) => {
       if (err) return callback(err);
 
+      // ids should always be strings because we're not doing math on it.
       const id = String(autoId++);
 
+      // set the id
       data.id = id;
+      // "save" the data into the index and the array. They are just pointing
+      // to the memory used so if you change the todo in one place, it will
+      // change it in both.
       idIndex[id] = data;
       todos.push(data);
 
@@ -206,29 +224,37 @@ class Todo {
     });
   }
 
+  // Finds all of the todos
   static find(callback) {
     callback(null, todos);
   }
 
-  static findOneById(id, callback) {
+  // Finds a single todo by id
+  static findOne(id, callback) {
     callback(null, idIndex[id]);
   }
 
+  // Creates a new todo and saves it to the database
   static create(newTodo, callback) {
     let todo = new Todo(newTodo);
     todo.save(callback);
   }
 
+  // Updates a todo by id
   static update(id, updateTodo, callback) {
-    Todo.findOneById(id, (err, todo) => {
+    Todo.findOne(id, (err, todo) => {
       if (err) return callback(err);
       if (!todo) return callback(new Error('todo not found with given id'));
 
+      // This allows us to do partial updates, so you can send just the
+      // "completed" field without sending the "name"
       let updatedTodo = Object.assign({}, todo, updateTodo);
 
+      // Validate that the newly updated todo has valid data
       Todo.validate(updatedTodo, (err, data) => {
         if (err) return callback(err);
 
+        // Update the todo
         Object.assign(idIndex[id], {
           name: updatedTodo.name,
           completed: updatedTodo.completed,
@@ -239,27 +265,39 @@ class Todo {
     });
   }
 
+  // Deletes a todo by id
   static delete(id, callback) {
-    Todo.findOneById(id, (err, todo) => {
+    Todo.findOne(id, (err, todo) => {
       if (err) return callback(err);
       if (!todo) return callback(new Error('todo not found with given id'));
 
-      const foundId = todos.findIndex((todo) => todo.id === id);
+      // Find the index of the todo in the list
+      const foundIndex = todos.findIndex((todo) => todo.id === id);
 
-      if (foundId === -1) return callback(new Error('error finding id in list of todos'));
+      // If for some reason we can't find it, return an error
+      if (foundIndex === -1) {
+        return callback(new Error('error finding id in list of todos'));
+      }
+
+      // Remove the document from all locations
       delete idIndex[id];
-      delete todos[foundId];
+      delete todos[foundIndex];
+
       callback(null, id);
     });
   }
 
+  // Validates todo data to make sure
   static validate(data, callback) {
-    if (typeof this._data.name !== 'string') {
+    // Check that the name is a string
+    if (typeof data.name !== 'string') {
       return callback(new Error('todo name must be a string'));
     }
-    if (typeof this._data.completed !== 'boolean') {
+    // Check that completed is a boolean
+    if (typeof data.completed !== 'boolean') {
       return callback(new Error('todo completed must be a boolean'));
     }
+
     callback(null, {
       name: data.name,
       completed: data.completed,
@@ -268,10 +306,116 @@ class Todo {
 
 }
 
+module.exports = Todo;
+
 ```
 
 I would highly recommend you read the above code and attempt to understand it.
-It will provide the functionality necessary to make hooking it up to your api
-a breeze. Basically, it provides you with the following api:
+It's not super important to understand everything above for this tutorial as we
+will be replacing it with our mongoose data models. If you haven't already,
+create a folder at the root of your project folder called `lib/`, and place the
+above contents into a file called `todo.js`.
 
-TODO finish the api documentation
+This file will provide the functionality necessary to make hooking it up to your
+api a breeze. The below examples show you how you can use the above module.
+
+```js
+// Creates a new Todo (but doesn't save it)
+let todo = new Todo({
+  name: 'Implement Todo class'
+});
+
+// Saves a new todo
+todo.save((err, newTodo) => {
+  if (err) return console.error(err);
+  console.log(newTodo);
+});
+
+// Creates and saves a new todo
+Todo.create({
+  name: 'Implement Todo class',
+  completed: true,
+}, (err, newTodo) => {
+  if (err) return console.error(err);
+  console.log(newTodo);
+});
+
+// Find all Todos
+Todo.find((err, todos) => {
+  if (err) return console.error(err);
+  console.log(todos);
+});
+
+// Find a single todo by id
+Todo.findOne('1', (err, todo) => {
+  if (err) return console.error(err);
+  console.log(todo);
+});
+
+// Update a todo
+Todo.update('1', { completed: true }, (err, todo) => {
+  if (err) return console.error(err);
+  console.log(todo);
+});
+
+// Delete a todo
+Todo.delete('1', (err) => {
+  if (err) return console.error(err);
+  // Todo with the id of '1' is now deleted
+});
+```
+
+Now that we have our Todo module, let's include it in our todo routes file
+`routes/todos.js`:
+
+```js
+'use strict';
+
+import express from 'express';
+import Todo from '../lib/todo';
+
+const { Router } = express;
+const todosRouter = new Router();
+
+todosRouter.get('/', (req, res, next) => {
+  Todo.find((err, todos) => {
+    if (err) return next(err);
+    res.json(todos);
+  });
+});
+
+todosRouter.post('/', (req, res, next) => {
+  Todo.create(req.body, (err, todo) => {
+    if (err) return next(err);
+    // We set the status to 201 to follow rest guidelines. 201 means "Created"
+    res.status(201).json(todo);
+  });
+});
+
+todosRouter.get('/:id', (req, res, next) => {
+  Todo.findOne(req.params.id, (err, todo) => {
+    if (err) return next(err);
+    res.json(todo);
+  });
+});
+
+todosRouter.put('/:id', (req, res, next) => {
+  Todo.update(req.params.id, req.body, (err, todo) => {
+    if (err) return next(err);
+    res.json(todo);
+  });
+});
+
+todosRouter.delete('/:id', (req, res, next) => {
+  Todo.delete(req.params.id, (err) => {
+    if (err) return next(err);
+    // We just a status 204 to mean "No Content".
+    res.sendStatus(204);
+  });
+});
+
+export default todosRouter;
+
+```
+
+TODO finish explanation
