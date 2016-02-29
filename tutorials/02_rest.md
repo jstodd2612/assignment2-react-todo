@@ -140,4 +140,138 @@ a response back! Right now you're not doing any validation on the data that
 comes into the response. We need to verify that it has the right properties and
 that they are the right data types so that we don't save bogus data.
 
-TODO: finish talking about data validation and adding in other rest endpoints.
+Let's do some rudimentary data validation in our `POST` endpoint
+(`/routes/todos.js`):
+
+```js
+todosRouter.post('/', (req, res, next) => {
+  // If there is no name, then return an error to the next callback
+  if (!req.body.name) {
+    return next(new Error('You must include a `name` in the body'));
+  }
+  // If the name property is not a string, return an error
+  if (typeof req.body.name !== 'string') {
+    return next(new Error('The `name` property must be a string'));
+  }
+
+  let newTodoId = todos.push({
+    name: req.body.name,
+    completed: false,
+  });
+
+  res.json(todos[newTodoId]);
+});
+```
+
+In the above, it checks to make sure the `name` property is sent along, and that
+it is a string. We send some informative error messages if either of those
+checks fail. Then if those checks pass, then we add the new todo to the array
+with the `completed` field set to false.
+
+This is a pretty rudimentary todo api which only allows you to retrieve and
+create new todos. Below is a simple Todo class to store todos in memory. Note
+that this will just be used for testing purposes and should not be used in
+production. Every time the server restarts, it will clear your todo data.
+
+```js
+'use strict';
+
+const todos = [];
+const idIndex = {};
+let autoId = 1;
+
+class Todo {
+
+  constructor(newTodo) {
+    Object.assign(this, {
+      completed: false,
+      name: '',
+    }, {
+      completed: newTodo.completed,
+      name: newTodo.name,
+    });
+  }
+
+  save(callback) {
+    Todo.validate(this, (err, data) => {
+      if (err) return callback(err);
+
+      const id = String(autoId++);
+
+      data.id = id;
+      idIndex[id] = data;
+      todos.push(data);
+
+      callback(null, data);
+    });
+  }
+
+  static find(callback) {
+    callback(null, todos);
+  }
+
+  static findOneById(id, callback) {
+    callback(null, idIndex[id]);
+  }
+
+  static create(newTodo, callback) {
+    let todo = new Todo(newTodo);
+    todo.save(callback);
+  }
+
+  static update(id, updateTodo, callback) {
+    Todo.findOneById(id, (err, todo) => {
+      if (err) return callback(err);
+      if (!todo) return callback(new Error('todo not found with given id'));
+
+      let updatedTodo = Object.assign({}, todo, updateTodo);
+
+      Todo.validate(updatedTodo, (err, data) => {
+        if (err) return callback(err);
+
+        Object.assign(idIndex[id], {
+          name: updatedTodo.name,
+          completed: updatedTodo.completed,
+        });
+
+        callback(null, idIndex[id]);
+      });
+    });
+  }
+
+  static delete(id, callback) {
+    Todo.findOneById(id, (err, todo) => {
+      if (err) return callback(err);
+      if (!todo) return callback(new Error('todo not found with given id'));
+
+      const foundId = todos.findIndex((todo) => todo.id === id);
+
+      if (foundId === -1) return callback(new Error('error finding id in list of todos'));
+      delete idIndex[id];
+      delete todos[foundId];
+      callback(null, id);
+    });
+  }
+
+  static validate(data, callback) {
+    if (typeof this._data.name !== 'string') {
+      return callback(new Error('todo name must be a string'));
+    }
+    if (typeof this._data.completed !== 'boolean') {
+      return callback(new Error('todo completed must be a boolean'));
+    }
+    callback(null, {
+      name: data.name,
+      completed: data.completed,
+    });
+  }
+
+}
+
+```
+
+I would highly recommend you read the above code and attempt to understand it.
+It will provide the functionality necessary to make hooking it up to your api
+a breeze. Basically, it provides you with the following api:
+
+TODO finish the api documentation
