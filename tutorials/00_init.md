@@ -112,6 +112,7 @@ Create the following folders in your app:
   things go.
 * `models/` - This is where our model definitions go. They will describe our
   database schemas and make it much easier to manage our data.
+* `public/` - This is where our static front-end assets will live.
 * `routes/` - This is where our api routes will go. We'll talk more about that
   in just a minute.
 
