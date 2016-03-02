@@ -141,3 +141,53 @@ the "Server listening" message in your console.
 
 Now that you've got kind of a boilerplate set up, go ahead and commit your work
 and push it up to github.
+
+We need to now set up our configuration. Install the `config` module with
+`npm install --save config`. Now in your `config/` directory, create a new file
+called `default.js`. This will act as your default config.
+
+```js
+'use strict';
+
+module.exports = {
+  port: '8000'
+};
+
+```
+
+Now in your `app.js` file, make the following changes:
+
+```js
+'use strict';
+
+import config from 'config'; // This is the config module. It will read your `config/default.js`
+import express from 'express';
+
+const app = express();
+const PORT = config.port; // Because we set the default port to 8000, it will pull in `8000`
+
+app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
+
+```
+
+> **Protip:** Notice how we also took out the `process.env.PORT || 8000`.
+`process.env.PORT` pulls the environment variable from your shell process. You
+can set environment variables for when you run scripts. like so:
+```sh
+PORT=3000 npm start
+```
+Then in your javascript, you can access it with this:
+```js
+console.log(process.env.PORT); // '3000'
+```
+In the new app.js file, we do not take environment variables into account
+anymore, but the `config` module allows us to utilize them. Create a new file
+in the `config/` folder called `custom-environment-variables.js`:
+```js
+'use strict'
+module.exports = {
+  port: 'PORT'
+};
+```
+Now when you set the `PORT` environment variable, it will override the default
+config.
