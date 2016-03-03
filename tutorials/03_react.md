@@ -25,7 +25,7 @@ Create a new folder called `public/`, and place a new file called `index.html`:
   <body>
     <div id="root"></div>
     <script type="text/babel">
-      React.render(
+      ReactDOM.render(
         <h1>Hello World</h1>,
         document.getElementById('root')
       );
@@ -57,5 +57,17 @@ Let's take a look at this piece by piece:
 - Everything in that `<script>` tag can be written in es6 and
   jsx.
 
--
+- `ReactDOM.render()` takes in two arguments:
+  1. A React element. It can have nested elements, but you must only have one
+    root element
+  2. A DOM element to mount your React component to. You just use the built in
+    browser methods like `document.getElementById`. Just make sure you have an
+    element on the page with the given id.
 
+# JSX
+
+TODO
+
+# React Components
+
+TODO
