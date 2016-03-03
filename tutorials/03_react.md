@@ -66,8 +66,69 @@ Let's take a look at this piece by piece:
 
 # JSX
 
-TODO
+Before we go any deeper, we should explain `JSX`. [Here's][jsx] a good primer on
+what `JSX` is. We'll summarize:
+
+> JSX is a JavaScript syntax extension that looks similar to XML.
+
+```js
+var myDivElement = <div className="foo" />;
+ReactDOM.render(myDivElement, document.getElementById('example'));
+```
+
+When used with React and a transpiler (like babel), it turns JSX into
+Javascript. The previous example would be turned into the following code:
+
+```js
+var myDivElement = React.createElement(
+  'div', // This is the type of html element, or it could be a custom component
+  { className: 'foo' } // This represents the attributes of the component
+);
+ReactDOM.render(myDivElement, document.getElementById('example'));
+```
+
+It allows you to represent tree-like structures that can be rendered into html.
+You can nest elements just like you would in html:
+
+```js
+var myForm = (
+  <form>
+    <label>
+      First Name:
+      <input type="text" />
+    </label>
+    <label>
+      Last Name:
+      <input type="text" />
+    </label>
+  </form>
+);
+
+ReactDOM.render(myForm, document.getElementById('example'));
+```
+
+The previous example gets turned into this:
+
+```js
+var myForm = React.createElement('form', null,
+  React.createElement('label', null,
+    'First Name:',
+    React.createElement('input', { type: 'text' })
+  ),
+  React.createElement('label', null,
+    'Last Name:',
+    React.createElement('input', { type: 'text' })
+  )
+);
+ReactDOM.render(myForm, document.getElementById('example'));
+```
+
+So you can write react without writing in jsx or needing that extra transpile
+step, but it's much more verbose and harder to read. Almost all react tutorials
+will favor JSX instead of plain JavaScript.
 
 # React Components
 
 TODO
+
+[jsx]: http://facebook.github.io/react/docs/jsx-in-depth.html
