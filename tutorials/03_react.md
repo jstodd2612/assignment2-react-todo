@@ -127,6 +127,84 @@ So you can write react without writing in jsx or needing that extra transpile
 step, but it's much more verbose and harder to read. Almost all react tutorials
 will favor JSX instead of plain JavaScript.
 
+You can also pass in variables and things into props and text areas:
+
+```js
+var todo = {
+  name: 'completed tutorial',
+  completed: false
+};
+var todoStyles = {
+  textDecoration: todo.completed ? 'line-through' : 'none'
+};
+var clickHandler = () => console.log('todo clicked!');
+
+var todoDiv = (
+  <div>
+    <span style={todoStyles} onClick={clickHandler}>{todo.name}</span>
+  </div>
+);
+
+ReactDOM.render(todoDiv, document.getElementById('example'));
+```
+
+The resulting html structure would look something like this:
+
+```html
+<div id="example">
+  <div>
+    <span style="text-transform: none" onclick="console.log('todo clicked!')">completed tutorial</span>
+  </div>
+</div>
+```
+
+If you want to repeat items, you can do it in JavaScript:
+
+```js
+var todos = [
+  { id: '1', name: 'graduate', completed: false },
+  { id: '2', name: 'get a job', completed: true },
+  { id: '3', name: 'buy a house', completed: false }
+];
+
+var todos = (
+  <ul>
+    {
+      todos.map((todo) => {
+        var todoStyles = {
+          textDecoration: todo.completed ? 'line-through' : 'none'
+        };
+        // You have to use a `key` property in order for react to track it
+        return (
+          <li key={todo.id}>
+            <span style={todoStyles}>{todo.name}</span>
+          </li>
+        )
+      })
+    }
+  </ul>
+);
+ReactDOM.render(todos, document.getElementById('example'));
+```
+
+The resulting html structure would look something like this:
+
+```html
+<div id="example">
+  <ul>
+    <li key="1">
+      <span style="text-transform: none">graduate</span>
+    </li>
+    <li key="2">
+      <span style="text-transform: line-through">get a job</span>
+    </li>
+    <li key="3">
+      <span style="text-transform: none">buy a house</span>
+    </li>
+  </ul>
+</div>
+```
+
 # React Components
 
 TODO
