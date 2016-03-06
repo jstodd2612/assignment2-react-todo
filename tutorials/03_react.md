@@ -207,6 +207,386 @@ The resulting html structure would look something like this:
 
 # React Components
 
-TODO
+React components provide an interface to build interactive HTML elements. It can
+be easy at first to build your entire application in a single React component,
+but the bigger components are much harder to isolate and reuse. React Components
+should ideally follow the Unix-philosophy:
+
+> Do one thing and do it well
+
+Following this philosophy in code makes it more maintainable, reusable, and
+modifiable. You should strive for this goal when writing React components. This
+will make them each more testable and reusable.
+
+The idea of building a React based application is to build a top level component
+that composes smaller components. You should build it in a "tree" like fashion
+with all components are only concerned with their "child" components. Components
+should not be concerned with their parent components, only about their inputs
+and outputs.
+
+Let's look at a React component in it's simplest form: a function:
+
+```js
+const Todo = (props) => {
+  var styles = {
+    textDecoration: props.completed ? 'line-through' : 'none'
+  };
+  return (
+    <span style={styles} onClick={() => props.onClick()}>{props.name}</span>
+  );
+};
+```
+
+This Todo component takes in props, and renders a dynamic, reusable todo item.
+It takes in three different properties: `completed`, `name`, and `onClick`. You
+can gather that by all of the ways we access the `props` variable inside of the
+component function.
+
+This should be pretty simple to read: A todo component will have a line through
+the text if the `completed` property is true. The text it displays will be the
+`name` property, and if a parent component cares if the todo item is clicked, it
+will pass through an `onClick` function property.
+
+Here's how you could render a Todo item:
+
+```js
+ReactDOM.render(
+  <Todo
+    name="Learn React"
+    completed={false}
+    onClick={() => console.log('Todo clicked!')}
+  />,
+  document.getElementById('example')
+);
+```
+
+Here's how a `TodoList` component might look like:
+
+```js
+const TodoList = (props) => {
+  return (
+    <ul>
+      {
+        props.todos.map((todo) => {
+          return (
+            <li key={todo.id}>
+              <Todo
+                name={todo.name}
+                completed={todo.completed}
+                onClick={() => props.onTodoClick(todo)}
+              />
+            </li>
+          );
+        })
+      }
+    </ul>
+  );
+};
+```
+
+The `TodoList` component uses the `Todo` component inside of it, but it also
+doesn't care about the application state. It just takes in the todo items,
+renders each of them, then calls it's own `onTodoClick()` when a todo items is
+clicked. Notice how we're passing the properties that the `Todo` component uses
+as attributes. You can pass in string values like this: `prop="value"`, but if
+you're passing in a variable, you need to use curly braces around the variable
+you're passing as a property.
+
+There are two other highly used ways of creating React components. One way is
+using React's `.createClass()` syntax. Let's our `AddTodo` form in that syntax:
+
+```js
+const AddTodo = React.createClass({
+  handleSubmit(e, input) {
+    e.preventDefault(); // Prevents actual form submission
+    this.props.onSubmit(input.value);
+    input.value = '';
+  },
+
+  // This is the function that gets called when it renders the component, kind
+  // of like our function components above. Instead of taking in the props as
+  // an argument, you have access to the props in `this.props`.
+  render() {
+    let input; // This will allow us to access the actual DOM node of our form
+               // input. See the <input /> ref property. The `ref` property
+               // function gets called on render, and assigns the `n` (node)
+               // value to the input variable, which allows us to use in in
+               // function handlers. See the `onSubmit` handler
+    return (
+      <form onSubmit={(e) => this.handleSubmit(e, input)}>
+        <input ref={(n) => input = n} />
+        <button>Add Todo</button>
+      </form>
+    );
+  }
+});
+```
+
+You can also use the es6 `class` syntax to write a component. This is how you
+could write the above component:
+
+```js
+class AddTodo extends React.Component {
+  handleSubmit(e, input) {
+    e.preventDefault();
+    this.props.onSubmit(input.value);
+    input.value = '';
+  }
+  render() {
+    let input;
+    return (
+      <form onSubmit={(e) => this.handleSubmit(e, input)}>
+        <input ref={(n) => input = n} />
+        <button>Add Todo</button>
+      </form>
+    );
+  }
+}
+```
+
+Alright, we've build all the children components that we need, but now we need
+to have our container component that stores the state of the application and
+actually handles creating new todos. In addition to using props, you can use
+state. State has a very specific use case, and should be used sparingly. A
+majority of your components should just use properties to manage how they are
+displayed. This will be important when we get into using redux.
+
+For our case, we will use state in our top-level `App` component. Let's take a
+look at what it might look like using the `createClass()` syntax:
+
+```js
+const App = React.createClass({
+  // This sets our initial `this.state` object
+  getInitialState() {
+    return { todos: [], autoId: 1 };
+  },
+
+  // We can call `this.createTodo('some name')` and it will add it to the state.
+  // Not that we need to call `this.setState({})` in order for the state changes
+  // to reflect on the page. This is the way we tell react "You should rerender
+  // the component because we changed something".
+  //
+  // In this function, we increment the autoId (so that each todo item has a
+  // unique id), and add the new todo. Notice I'm using the spread (`...`)
+  // operator. I'm essentially creating a new array that has all of the old todo
+  // items, then just add a new one onto the end of the newly created array.
+  createTodo(name) {
+    this.setState({
+      autoId: this.state.autoId + 1,
+      todos: [
+        ...this.state.todos,
+        {
+          id: this.state.autoId,
+          name,
+          completed: false
+        }
+      ]
+    });
+  },
+
+  // The toggleTodo method takes in a todo's id, and set's the new state. It
+  // maps through all of the todos, and modifies the one todo whose id matched
+  // the one given, and toggles the completed property.
+  toggleTodo(id) {
+    this.setState({
+      todos: this.state.todos.map((todo) => {
+        if (todo.id === id) {
+          todo.completed = !todo.completed;
+        }
+        return todo;
+      })
+    });
+  },
+
+  // Here we just utilize the components we've built. On the `<AddTodo />`'s
+  // component `onSubmit()` handler with the new name, and pass it to the
+  // `App` component's `this.createTodo()` handler.
+  //
+  // Same with the todos list. We pass down the todos we have in our state, and
+  // we handle the TodoList's `onTodoClick()` handler, which is the `Todo`
+  // component's `onClick()` handler.
+  render() {
+    return (
+      <div>
+        <AddTodo onSubmit={(name) => this.createTodo(name)} />
+        <TodoList
+          todos={this.state.todos}
+          onTodoClick={(todo) => this.toggleTodo(todo.id)}
+        />
+      </div>
+    );
+  }
+});
+```
+
+Here's the same App component in es6 `class` syntax. Note that instead of the
+`getInitialState()` method that we use the `constructor()` function with the
+`super()` function. This is how es6 `class` inheritance works.
+
+```js
+class App extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { todos: [], autoId: 1 };
+  }
+
+  createTodo(name) {
+    this.setState({
+      autoId: this.state.autoId + 1,
+      todos: [
+        ...this.state.todos,
+        {
+          id: this.state.autoId,
+          name,
+          completed: false
+        }
+      ]
+    });
+  }
+
+  toggleTodo(id) {
+    this.setState({
+      todos: this.state.todos.map((todo) => {
+        if (todo.id === id) {
+          todo.completed = !todo.completed;
+        }
+        return todo;
+      })
+    });
+  }
+
+  render() {
+    return (
+      <div>
+        <AddTodo onSubmit={(name) => this.createTodo(name)} />
+        <TodoList
+          todos={this.state.todos}
+          onTodoClick={(todo) => this.toggleTodo(todo.id)}
+        />
+      </div>
+    );
+  }
+}
+```
+
+All together now:
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>React Todo App</title>
+    <script src="https://fb.me/react-0.14.7.min.js"></script>
+    <script src="https://fb.me/react-dom-0.14.7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.23/browser.min.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="text/babel">
+      const Todo = (props) => {
+        var styles = {
+          textDecoration: props.completed ? 'line-through' : 'none'
+        };
+        return (
+          <span style={styles} onClick={() => props.onClick()}>{props.name}</span>
+        );
+      };
+
+      const TodoList = (props) => {
+        return (
+          <ul>
+            {
+              props.todos.map((todo) => {
+                return (
+                  <li key={todo.id}>
+                    <Todo
+                      name={todo.name}
+                      completed={todo.completed}
+                      onClick={() => props.onTodoClick(todo)}
+                    />
+                  </li>
+                );
+              })
+            }
+          </ul>
+        );
+      };
+
+      const AddTodo = React.createClass({
+        handleSubmit(e, input) {
+          e.preventDefault(); // Prevents actual form submission
+          this.props.onSubmit(input.value);
+          input.value = '';
+        },
+
+        // This is the function that gets called when it renders the component, kind
+        // of like our function components above. Instead of taking in the props as
+        // an argument, you have access to the props in `this.props`.
+        render() {
+          let input; // This will allow us to access the actual DOM node of our form
+                     // input. See the <input /> ref property. The `ref` property
+                     // function gets called on render, and assigns the `n` (node)
+                     // value to the input variable, which allows us to use in in
+                     // function handlers. See the `onSubmit` handler
+          return (
+            <form onSubmit={(e) => this.handleSubmit(e, input)}>
+              <input ref={(n) => input = n} />
+              <button>Add Todo</button>
+            </form>
+          );
+        }
+      });
+
+      const App = React.createClass({
+        getInitialState() {
+          return { todos: [], autoId: 1 };
+        },
+
+        createTodo(name) {
+          this.setState({
+            autoId: this.state.autoId + 1,
+            todos: [
+              ...this.state.todos,
+              {
+                id: this.state.autoId,
+                name,
+                completed: false
+              }
+            ]
+          });
+        },
+
+        toggleTodo(id) {
+          this.setState({
+            todos: this.state.todos.map((todo) => {
+              if (todo.id === id) {
+                todo.completed = !todo.completed;
+              }
+              return todo;
+            })
+          });
+        },
+
+        render() {
+          return (
+            <div>
+              <AddTodo onSubmit={(name) => this.createTodo(name)} />
+              <TodoList
+                todos={this.state.todos}
+                onTodoClick={(todo) => this.toggleTodo(todo.id)}
+              />
+            </div>
+          );
+        }
+      });
+
+      ReactDOM.render(
+        <App />,
+        document.getElementById('root')
+      );
+    </script>
+  </body>
+</html>
+```
 
 [jsx]: http://facebook.github.io/react/docs/jsx-in-depth.html
