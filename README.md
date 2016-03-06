@@ -58,6 +58,6 @@ the same work in both es5 and es6.
 1. [routes](./tutorials/01_routes.md)
 1. [rest](./tutorials/02_rest.md)
 1. [react](./tutorials/03_react.md)
-1. webpack
+1. [webpack](.tutorials/04_webpack.md)
 1. redux
 1. mongoose
