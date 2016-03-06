@@ -229,7 +229,8 @@ Let's look at a React component in it's simplest form: a function:
 ```js
 const Todo = (props) => {
   var styles = {
-    textDecoration: props.completed ? 'line-through' : 'none'
+    textDecoration: props.completed ? 'line-through' : 'none',
+    cursor: 'pointer'
   };
   return (
     <span style={styles} onClick={() => props.onClick()}>{props.name}</span>

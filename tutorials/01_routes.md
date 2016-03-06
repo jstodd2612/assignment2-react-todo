@@ -85,11 +85,12 @@ onto our app in `app.js`. You're app.js should look something like this now:
 ```js
 'use strict';
 
+import config from 'config';
 import express from 'express';
 import api from './routes'; // This is our root api route.
 
 const app = express();
-const PORT = process.env.PORT || 8000;
+const PORT = config.port;
 
 // Here's where we set up our middleware
 app.use('/api', api);

@@ -118,12 +118,13 @@ To use it, let's include it in our `app.js`
 ```js
 'use strict';
 
+import config from 'express';
 import express from 'express';
 import bodyParser from 'bodyParser';
 import api from './routes';
 
 const app = express();
-const PORT = process.env.PORT || 8000;
+const PORT = config.port;
 
 // Here's where the magic happens. Any middleware after this have access to
 // `req.body` for those requests that come through as `json` bodies with the
