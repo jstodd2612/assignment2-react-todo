@@ -298,8 +298,9 @@ using React's `.createClass()` syntax. Let's our `AddTodo` form in that syntax:
 
 ```js
 const AddTodo = React.createClass({
-  handleSubmit(e, input) {
+  handleSubmit(e) {
     e.preventDefault(); // Prevents actual form submission
+    const input = this.refs.input;
     this.props.onSubmit(input.value);
     input.value = '';
   },
@@ -308,14 +309,9 @@ const AddTodo = React.createClass({
   // of like our function components above. Instead of taking in the props as
   // an argument, you have access to the props in `this.props`.
   render() {
-    let input; // This will allow us to access the actual DOM node of our form
-               // input. See the <input /> ref property. The `ref` property
-               // function gets called on render, and assigns the `n` (node)
-               // value to the input variable, which allows us to use in in
-               // function handlers. See the `onSubmit` handler
     return (
-      <form onSubmit={(e) => this.handleSubmit(e, input)}>
-        <input ref={(n) => input = n} />
+      <form onSubmit={this.handleSubmit}>
+        <input ref="input" />
         <button>Add Todo</button>
       </form>
     );
@@ -328,16 +324,21 @@ could write the above component:
 
 ```js
 class AddTodo extends React.Component {
-  handleSubmit(e, input) {
+  constructor(props) {
+    super(props)
+    this.handleSubmit = this.handleSubmit.bind(this);
+  }
+  handleSubmit(e) {
     e.preventDefault();
+    const input = this.refs.input;
     this.props.onSubmit(input.value);
     input.value = '';
   }
   render() {
     let input;
     return (
-      <form onSubmit={(e) => this.handleSubmit(e, input)}>
-        <input ref={(n) => input = n} />
+      <form onSubmit={this.handleSubmit}>
+        <input ref="input" />
         <button>Add Todo</button>
       </form>
     );
@@ -388,7 +389,8 @@ const App = React.createClass({
   // The toggleTodo method takes in a todo's id, and set's the new state. It
   // maps through all of the todos, and modifies the one todo whose id matched
   // the one given, and toggles the completed property.
-  toggleTodo(id) {
+  toggleTodo(todo) {
+    const id = todo.id;
     this.setState({
       todos: this.state.todos.map((todo) => {
         if (todo.id === id) {
@@ -409,10 +411,10 @@ const App = React.createClass({
   render() {
     return (
       <div>
-        <AddTodo onSubmit={(name) => this.createTodo(name)} />
+        <AddTodo onSubmit={this.createTodo} />
         <TodoList
           todos={this.state.todos}
-          onTodoClick={(todo) => this.toggleTodo(todo.id)}
+          onTodoClick={this.toggleTodo}
         />
       </div>
     );
@@ -429,6 +431,8 @@ class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = { todos: [], autoId: 1 };
+    this.createTodo = this.createTodo.bind(this);
+    this.toggleTodo = this.toggleTodo.bind(this);
   }
 
   createTodo(name) {
@@ -445,7 +449,8 @@ class App extends React.Component {
     });
   }
 
-  toggleTodo(id) {
+  toggleTodo(todo) {
+    const id = todo.id;
     this.setState({
       todos: this.state.todos.map((todo) => {
         if (todo.id === id) {
@@ -459,10 +464,10 @@ class App extends React.Component {
   render() {
     return (
       <div>
-        <AddTodo onSubmit={(name) => this.createTodo(name)} />
+        <AddTodo onSubmit={this.createTodo} />
         <TodoList
           todos={this.state.todos}
-          onTodoClick={(todo) => this.toggleTodo(todo.id)}
+          onTodoClick={this.toggleTodo}
         />
       </div>
     );
@@ -514,24 +519,17 @@ All together now:
       };
 
       const AddTodo = React.createClass({
-        handleSubmit(e, input) {
-          e.preventDefault(); // Prevents actual form submission
+        handleSubmit(e) {
+          e.preventDefault();
+          const input = this.refs.input;
           this.props.onSubmit(input.value);
           input.value = '';
         },
 
-        // This is the function that gets called when it renders the component, kind
-        // of like our function components above. Instead of taking in the props as
-        // an argument, you have access to the props in `this.props`.
         render() {
-          let input; // This will allow us to access the actual DOM node of our form
-                     // input. See the <input /> ref property. The `ref` property
-                     // function gets called on render, and assigns the `n` (node)
-                     // value to the input variable, which allows us to use in in
-                     // function handlers. See the `onSubmit` handler
           return (
-            <form onSubmit={(e) => this.handleSubmit(e, input)}>
-              <input ref={(n) => input = n} />
+            <form onSubmit={this.handleSubmit}>
+              <input ref="input" />
               <button>Add Todo</button>
             </form>
           );
@@ -539,6 +537,7 @@ All together now:
       });
 
       const App = React.createClass({
+
         getInitialState() {
           return { todos: [], autoId: 1 };
         },
@@ -557,7 +556,8 @@ All together now:
           });
         },
 
-        toggleTodo(id) {
+        toggleTodo(todo) {
+          const id = todo.id;
           this.setState({
             todos: this.state.todos.map((todo) => {
               if (todo.id === id) {
@@ -571,10 +571,10 @@ All together now:
         render() {
           return (
             <div>
-              <AddTodo onSubmit={(name) => this.createTodo(name)} />
+              <AddTodo onSubmit={this.createTodo} />
               <TodoList
                 todos={this.state.todos}
-                onTodoClick={(todo) => this.toggleTodo(todo.id)}
+                onTodoClick={this.toggleTodo}
               />
             </div>
           );
